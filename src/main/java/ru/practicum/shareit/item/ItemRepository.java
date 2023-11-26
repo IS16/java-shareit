@@ -7,9 +7,14 @@ import java.util.Optional;
 
 public interface ItemRepository {
     Item create(Long userId, Item item);
+
     Optional<Item> findById(Long id);
+
     Item update(Long id, Item item);
+
     List<Item> findByOwnerId(Long userId);
+
     List<Item> findByText(String text);
+
     void deleteItem(Long id);
 }
