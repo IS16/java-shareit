@@ -27,7 +27,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findByEmail(String email) {
-        List <User> found = users.values()
+        List<User> found = users.values()
                 .stream()
                 .filter(user -> user.getEmail().equals(email))
                 .collect(Collectors.toList());
