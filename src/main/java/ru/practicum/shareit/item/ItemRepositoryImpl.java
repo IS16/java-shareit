@@ -33,22 +33,9 @@ public class ItemRepositoryImpl implements ItemRepository {
     }
 
     @Override
-    public Item update(Long id, Item item) {
-        item.setId(id);
-
-        if (item.getName() != null) {
-            items.get(id).setName(item.getName());
-        }
-
-        if (item.getDescription() != null) {
-            items.get(id).setDescription(item.getDescription());
-        }
-
-        if (item.getAvailable() != null) {
-            items.get(id).setAvailable(item.getAvailable());
-        }
-
-        return items.get(id);
+    public Item update(Item item) {
+        items.put(item.getId(), item);
+        return items.get(item.getId());
     }
 
     @Override

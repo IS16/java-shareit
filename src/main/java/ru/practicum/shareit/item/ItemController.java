@@ -1,15 +1,15 @@
 package ru.practicum.shareit.item;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.model.Item;
 
+import javax.validation.Valid;
 import java.util.List;
 
-/**
- * TODO Sprint add-controllers.
- */
 @RestController
+@Validated
 @RequestMapping("/items")
 public class ItemController {
     private final ItemService itemService;
@@ -20,7 +20,7 @@ public class ItemController {
     }
 
     @PostMapping
-    public Item add(@RequestHeader("X-Sharer-User-Id") Long userId, @RequestBody Item item) {
+    public Item add(@RequestHeader("X-Sharer-User-Id") Long userId, @Valid @RequestBody Item item) {
         return itemService.createItem(userId, item);
     }
 

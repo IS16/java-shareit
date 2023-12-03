@@ -48,18 +48,9 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public User update(Long id, User user) {
-        user.setId(id);
-
-        if (user.getName() != null) {
-            users.get(id).setName(user.getName());
-        }
-
-        if (user.getEmail() != null) {
-            users.get(id).setEmail(user.getEmail());
-        }
-
-        return users.get(id);
+    public User update(User user) {
+        users.put(user.getId(), user);
+        return users.get(user.getId());
     }
 
     @Override

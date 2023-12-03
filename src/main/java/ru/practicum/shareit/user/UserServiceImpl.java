@@ -1,6 +1,7 @@
 package ru.practicum.shareit.user;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.user.exceptions.UserAlreadyExists;
 import ru.practicum.shareit.user.exceptions.UserNotFound;
@@ -11,39 +12,49 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository repository;
 
     @Override
     public List<User> getAllUsers() {
+        log.info("Получен список всех пользователей");
         return repository.findAll();
     }
 
     @Override
     public User createUser(User user) {
         validateUser(user);
-
+        log.info("Добавлен новый пользователь: " + user);
         return repository.create(user);
     }
 
     @Override
     public User updateUser(Long id, User user) {
         if (repository.findById(id).isEmpty()) {
+            log.info(String.format("Пользователь с id = %d не найден", id));
             throw new UserNotFound("Пользователь с данным id не найден");
         }
 
+        user.setId(id);
+
         User foundUser = repository.findById(id).get();
 
-        if (foundUser.getEmail().equals(user.getEmail())) {
-            user.setEmail(null);
+        if (user.getName() == null) {
+            user.setName(foundUser.getName());
         }
 
-        if (user.getEmail() != null) {
+        if (user.getEmail() == null) {
+            user.setEmail(foundUser.getEmail());
+        }
+
+        if (!user.getEmail().equals(foundUser.getEmail())) {
             validateUser(user);
         }
 
-        return repository.update(id, user);
+        log.info("Обновлён пользователь: " + user);
+        return repository.update(user);
     }
 
     @Override
@@ -53,11 +64,13 @@ public class UserServiceImpl implements UserService {
             throw new UserNotFound("Пользователь с данным id не найден");
         }
 
+        log.info("Получена информация о пользователе с id = " + id);
         return user.get();
     }
 
     @Override
     public void deleteUser(Long id) {
+        log.info("Удалён пользователь с id = " + id);
         repository.delete(id);
     }
 
@@ -74,6 +87,7 @@ public class UserServiceImpl implements UserService {
 
     private void validateEmail(String email) {
         if (email == null) {
+
             throw new ValidationError("Невалидная почта");
         }
 
