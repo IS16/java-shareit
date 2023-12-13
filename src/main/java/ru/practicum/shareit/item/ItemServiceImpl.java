@@ -187,7 +187,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private BookingOutputDto getLastBooking(Long itemId) {
-        Booking booking = bookingRepository.findFirstByItem_IdAndEndBeforeOrderByEndDesc(itemId, LocalDateTime.now());
+        Booking booking = bookingRepository.findFirstByItem_IdAndStartBeforeAndStatusOrderByStartDesc(itemId, LocalDateTime.now(), BookingStatus.APPROVED);
         if (booking != null) {
             return mapperService.toBookingOutputDto(booking);
         }
@@ -196,7 +196,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private BookingOutputDto getNextBooking(Long itemId) {
-        Booking booking = bookingRepository.findFirstByItem_IdAndStartAfterOrderByStartAsc(itemId, LocalDateTime.now());
+        Booking booking = bookingRepository.findFirstByItem_IdAndStartAfterAndStatusOrderByStartAsc(itemId, LocalDateTime.now(), BookingStatus.APPROVED);
         if (booking != null) {
             return mapperService.toBookingOutputDto(booking);
         }
