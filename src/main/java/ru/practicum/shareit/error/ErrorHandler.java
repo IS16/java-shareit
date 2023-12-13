@@ -5,6 +5,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.practicum.shareit.booking.exceptions.BookingNotFound;
 import ru.practicum.shareit.error.baseExceptions.ForbiddenException;
 import ru.practicum.shareit.item.exceptions.ItemNotFound;
 import ru.practicum.shareit.user.exceptions.UserAlreadyExists;
@@ -25,7 +26,7 @@ public class ErrorHandler {
         return new ErrorResponse(e.getMessage());
     }
 
-    @ExceptionHandler({UserNotFound.class, ItemNotFound.class})
+    @ExceptionHandler({UserNotFound.class, ItemNotFound.class, BookingNotFound.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFoundException(final RuntimeException e) {
         return new ErrorResponse(e.getMessage());
