@@ -3,35 +3,40 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.user.exceptions.UserAlreadyExists;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.exceptions.UserNotFound;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.error.baseExceptions.ValidationError;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository repository;
+    private final UserMapper userMapper;
 
     @Override
-    public List<User> getAllUsers() {
+    public List<UserDto> getAllUsers() {
         log.info("Получен список всех пользователей");
-        return repository.findAll();
+        return repository.findAll().stream()
+                .map(userMapper::toUserDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public User createUser(User user) {
+    public UserDto createUser(User user) {
         validateUser(user);
         log.info("Добавлен новый пользователь: " + user);
-        return repository.create(user);
+        return userMapper.toUserDto(repository.save(user));
     }
 
     @Override
-    public User updateUser(Long id, User user) {
+    public UserDto updateUser(Long id, User user) {
         if (repository.findById(id).isEmpty()) {
             log.info(String.format("Пользователь с id = %d не найден", id));
             throw new UserNotFound("Пользователь с данным id не найден");
@@ -54,40 +59,32 @@ public class UserServiceImpl implements UserService {
         }
 
         log.info("Обновлён пользователь: " + user);
-        return repository.update(user);
+        return userMapper.toUserDto(repository.save(user));
     }
 
     @Override
-    public User getUserById(Long id) {
+    public UserDto getUserById(Long id) {
         Optional<User> user = repository.findById(id);
         if (user.isEmpty()) {
             throw new UserNotFound("Пользователь с данным id не найден");
         }
 
         log.info("Получена информация о пользователе с id = " + id);
-        return user.get();
+        return userMapper.toUserDto(user.get());
     }
 
     @Override
     public void deleteUser(Long id) {
         log.info("Удалён пользователь с id = " + id);
-        repository.delete(id);
+        repository.deleteById(id);
     }
 
     private void validateUser(User user) {
         validateEmail(user.getEmail());
-        checkEmailExists(user);
-    }
-
-    private void checkEmailExists(User user) {
-        if (repository.findByEmail(user.getEmail()).isPresent()) {
-            throw new UserAlreadyExists("Пользователь с данной почтой уже существует");
-        }
     }
 
     private void validateEmail(String email) {
         if (email == null) {
-
             throw new ValidationError("Невалидная почта");
         }
 

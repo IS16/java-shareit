@@ -2,33 +2,53 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.BookingRepository;
+import ru.practicum.shareit.booking.dto.BookingOutputDto;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.error.baseExceptions.ForbiddenException;
 import ru.practicum.shareit.error.baseExceptions.ValidationError;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.exceptions.ItemNotFound;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.service.MapperService;
 import ru.practicum.shareit.user.UserService;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserMapper;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
-    private final ItemRepository repository;
+    private final MapperService mapperService;
     private final UserService userService;
+    private final UserMapper userMapper;
+    private final ItemRepository repository;
+    private final CommentRepository commentRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
-    public Item createItem(Long userId, Item item) {
-        validateUser(userId);
+    public ItemDto createItem(Long userId, Item item) {
+        UserDto user = validateUser(userId);
         log.info("Создан новый предмет: " + item);
-        return repository.create(userId, item);
+        item.setOwner(userMapper.toUser(user));
+
+        return mapperService.toItemDto(repository.save(item), null);
     }
 
     @Override
-    public Item getItemById(Long id) {
+    public ItemDto getItemById(Long id, Long userId) {
         Optional<Item> item = repository.findById(id);
         if (item.isEmpty()) {
             log.info(String.format("Предмет с id = %d не найден", id));
@@ -36,11 +56,16 @@ public class ItemServiceImpl implements ItemService {
         }
 
         log.info("Получена информация о предмете с id = " + id);
-        return item.get();
+
+        if (userId.equals(item.get().getOwner().getId())) {
+            return mapperService.toItemDtoWithBooking(item.get(), getLastBooking(id), getNextBooking(id), getCommentsByItemId(id));
+        } else {
+            return mapperService.toItemDto(item.get(), getCommentsByItemId(id));
+        }
     }
 
     @Override
-    public Item updateItem(Long id, Long userId, Item item) {
+    public ItemDto updateItem(Long id, Long userId, Item item) {
         if (repository.findById(id).isEmpty()) {
             log.info(String.format("Предмет с id = %d не найден", id));
             throw new ItemNotFound("Вещь с данным id не найдена");
@@ -48,15 +73,15 @@ public class ItemServiceImpl implements ItemService {
 
         Item foundItem = repository.findById(id).get();
 
-        if (!userId.equals(foundItem.getOwner())) {
+        if (!userId.equals(foundItem.getOwner().getId())) {
             log.info("Попытка изменить вещь другим пользователем");
             throw new ForbiddenException("Текущий пользователь не может редактировать данную вещь");
         }
 
-        validateUser(userId);
+        UserDto user = validateUser(userId);
 
         item.setId(id);
-        item.setOwner(userId);
+        item.setOwner(userMapper.toUser(user));
 
         if (item.getName() == null) {
             item.setName(foundItem.getName());
@@ -81,25 +106,32 @@ public class ItemServiceImpl implements ItemService {
         }
 
         log.info("Обновлён предмет: " + item);
-        return repository.update(item);
+        return mapperService.toItemDto(repository.save(item), getCommentsByItemId(id));
     }
 
     @Override
-    public List<Item> getAllItems(Long userId) {
+    public List<ItemDto> getAllItems(Long userId) {
         validateUser(userId);
 
         log.info("Получен список всех предметов");
-        return repository.findByOwnerId(userId);
+        return repository.findByOwnerId(userId).stream()
+                .map(item ->
+                    mapperService.toItemDtoWithBooking(item, getLastBooking(item.getId()), getNextBooking(item.getId()), getCommentsByItemId(item.getId()))
+                    )
+                .sorted(Comparator.comparing(ItemDto::getId))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Item> searchItems(String text) {
+    public List<ItemDto> searchItems(String text) {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
 
         log.info(String.format("Поиск предметов по подстроке \"%s\"", text));
-        return repository.findByText(text);
+        return repository.search(text).stream()
+                .map(item -> mapperService.toItemDto(item, getCommentsByItemId(item.getId())))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -114,19 +146,61 @@ public class ItemServiceImpl implements ItemService {
         log.info("Удалён предмет с id = " + id);
         validateUser(userId);
 
-        if (!userId.equals(foundItem.getOwner())) {
+        if (!userId.equals(foundItem.getOwner().getId())) {
             throw new ForbiddenException("Текущий пользователь не может удалить данную вещь");
         }
 
-        repository.deleteItem(id);
-        return;
+        repository.deleteById(id);
     }
 
-    private void validateUser(Long userId) {
+    private UserDto validateUser(Long userId) {
         if (userId == null) {
             throw new ValidationError("Не указан id пользователя");
         }
 
-        userService.getUserById(userId);
+        return userService.getUserById(userId);
+    }
+
+    @Override
+    public CommentDto createComment(CommentDto commentDto, Long itemId, Long userId) {
+        validateUser(userId);
+
+        Comment comment = new Comment();
+        Booking booking = bookingRepository.findFirstByItem_IdAndBooker_IdAndEndIsBeforeAndStatus(itemId, userId, LocalDateTime.now(), BookingStatus.APPROVED);
+        if (booking != null) {
+            comment.setItem(booking.getItem());
+            comment.setAuthor(booking.getBooker());
+            comment.setText(commentDto.getText());
+            comment.setCreated(LocalDateTime.now());
+        } else {
+            throw new ValidationError("Вещь не была забронирована данным пользователем");
+        }
+
+        return mapperService.toCommentDto(commentRepository.save(comment));
+    }
+
+    @Override
+    public List<CommentDto> getCommentsByItemId(Long itemId) {
+        return commentRepository.findAllByItem_id(itemId, Sort.by(Sort.Direction.DESC, "created")).stream()
+                .map(mapperService::toCommentDto)
+                .collect(Collectors.toList());
+    }
+
+    private BookingOutputDto getLastBooking(Long itemId) {
+        Booking booking = bookingRepository.findFirstByItem_IdAndStartBeforeAndStatusOrderByStartDesc(itemId, LocalDateTime.now(), BookingStatus.APPROVED);
+        if (booking != null) {
+            return mapperService.toBookingOutputDto(booking);
+        }
+
+        return null;
+    }
+
+    private BookingOutputDto getNextBooking(Long itemId) {
+        Booking booking = bookingRepository.findFirstByItem_IdAndStartAfterAndStatusOrderByStartAsc(itemId, LocalDateTime.now(), BookingStatus.APPROVED);
+        if (booking != null) {
+            return mapperService.toBookingOutputDto(booking);
+        }
+
+        return null;
     }
 }
