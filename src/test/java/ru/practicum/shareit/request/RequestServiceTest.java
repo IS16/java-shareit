@@ -95,4 +95,32 @@ public class RequestServiceTest {
 
         assertEquals(1, itemRequestService.getAllItemRequests(user.getId(), 0, null).size());
     }
+
+    @Test
+    void shouldReturnAllItemRequestsWithSizeNotNull() {
+        UserDto user = userService.createUser(mapperService.toUser(userDto1));
+        UserDto user1 = userService.createUser(mapperService.toUser(userDto2));
+
+        ItemRequestDto itemRequestDto1 = new ItemRequestDto(
+                4L,
+                "Тт",
+                user1,
+                LocalDateTime.of(2025, 3, 1, 0, 0),
+                null
+        );
+
+        itemRequestService.create(itemRequestDto1, user1.getId());
+
+        ItemRequestDto itemRequestDto2 = new ItemRequestDto(
+                5L,
+                "Тdsdsт",
+                user1,
+                LocalDateTime.of(2025, 3, 1, 0, 0),
+                null
+        );
+
+        itemRequestService.create(itemRequestDto2, user1.getId());
+
+        assertEquals(1, itemRequestService.getAllItemRequests(user.getId(), 0, 1).size());
+    }
 }

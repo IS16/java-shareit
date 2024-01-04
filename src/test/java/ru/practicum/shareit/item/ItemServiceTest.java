@@ -103,7 +103,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    void shouldReturnItemsBySearch() {
+    void shouldReturnItemsBySearchSizeNotNull() {
         User user = new User(3L, "admin", "admin@shareit.ru");
         UserDto newUserDto = userService.createUser(user);
 
@@ -129,6 +129,36 @@ public class ItemServiceTest {
         itemService.createItem(newUserDto.getId(), item2);
 
         List<ItemDto> itemsList = itemService.searchItems("item", 0, 4);
+        assertEquals(1, itemsList.size());
+    }
+
+    @Test
+    void shouldReturnItemsBySearchSizeNull() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+
+        Item item2 = new Item(
+                4L,
+                "Весь",
+                "Des",
+                true,
+                null,
+                null
+        );
+
+        itemService.createItem(newUserDto.getId(), item1);
+        itemService.createItem(newUserDto.getId(), item2);
+
+        List<ItemDto> itemsList = itemService.searchItems("item", 0, null);
         assertEquals(1, itemsList.size());
     }
 
@@ -210,5 +240,211 @@ public class ItemServiceTest {
         );
 
         assertEquals("Вещь не была забронирована данным пользователем", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdateItemNotFound() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+        ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
+
+        ItemNotFound exception = assertThrows(
+                ItemNotFound.class,
+                () -> itemService.updateItem(10L, user.getId(), item1)
+        );
+
+        assertEquals("Вещь с данным id не найдена", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdateWithUserNotOwner() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+        ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
+
+        UserDto newUserDto1 = userService.createUser(new User(4L, "support", "support@shareit.ru"));
+
+        ForbiddenException exception = assertThrows(
+                ForbiddenException.class,
+                () -> itemService.updateItem(newItemDto.getId(), newUserDto1.getId(), item1)
+        );
+
+        assertEquals("Текущий пользователь не может редактировать данную вещь", exception.getMessage());
+    }
+
+    @Test
+    void shouldUpdateItem() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+        ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
+
+        Item updatedItem = new Item(
+                newItemDto.getId(),
+                "Новое название Item1",
+                "Test",
+                null,
+                null,
+                null
+        );
+
+        itemService.updateItem(updatedItem.getId(), newUserDto.getId(), updatedItem);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdateNameBlank() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+        ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
+
+        item1.setName(" ");
+
+        ValidationError exception = assertThrows(
+                ValidationError.class,
+                () -> itemService.updateItem(newItemDto.getId(), newUserDto.getId(), item1)
+        );
+
+        assertEquals("Название предмета не может быть пустым", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdateDescriptionBlank() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+        ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
+
+        item1.setDescription(" ");
+
+        ValidationError exception = assertThrows(
+                ValidationError.class,
+                () -> itemService.updateItem(newItemDto.getId(), newUserDto.getId(), item1)
+        );
+
+        assertEquals("Описание предмета не может быть пустым", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeleteItemNotFound() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+        ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
+
+        ItemNotFound exception = assertThrows(
+                ItemNotFound.class,
+                () -> itemService.deleteItem(100L, newUserDto.getId())
+        );
+
+        assertEquals("Вещь с данным id не найдена", exception.getMessage());
+    }
+
+    @Test
+    void shouldReturnAllItemsSizeNull() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+
+        Item item2 = new Item(
+                4L,
+                "Весь",
+                "Des",
+                true,
+                null,
+                null
+        );
+
+        itemService.createItem(newUserDto.getId(), item1);
+        itemService.createItem(newUserDto.getId(), item2);
+
+        assertEquals(2, itemService.getAllItems(newUserDto.getId(), 0, null).size());
+    }
+
+    @Test
+    void shouldReturnAllItemsSizeNotNull() {
+        User user = new User(3L, "admin", "admin@shareit.ru");
+        UserDto newUserDto = userService.createUser(user);
+
+        Item item1 = new Item(
+                3L,
+                "Item1",
+                "Description",
+                true,
+                null,
+                null
+        );
+
+        Item item2 = new Item(
+                4L,
+                "Весь",
+                "Des",
+                true,
+                null,
+                null
+        );
+
+        itemService.createItem(newUserDto.getId(), item1);
+        itemService.createItem(newUserDto.getId(), item2);
+
+        assertEquals(1, itemService.getAllItems(newUserDto.getId(), 0, 1).size());
     }
 }

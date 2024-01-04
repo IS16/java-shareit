@@ -40,6 +40,16 @@ public class UserServiceTest {
     }
 
     @Test
+    void shouldThrowExceptionWhenUpdateUserNotFound() {
+        UserNotFound exception = assertThrows(
+                UserNotFound.class,
+                () -> userService.updateUser(100L, user)
+        );
+
+        assertEquals("Пользователь с данным id не найден", exception.getMessage());
+    }
+
+    @Test
     void shouldUpdateUser() {
         UserDto userDto = userService.createUser(user);
         userDto.setName("Test");
