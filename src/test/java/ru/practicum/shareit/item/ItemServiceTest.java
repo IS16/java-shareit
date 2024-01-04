@@ -307,8 +307,19 @@ public class ItemServiceTest {
 
         Item updatedItem = new Item(
                 newItemDto.getId(),
-                "Новое название Item1",
-                "Test",
+                "Новое название",
+                null,
+                null,
+                null,
+                null
+        );
+
+        itemService.updateItem(updatedItem.getId(), newUserDto.getId(), updatedItem);
+
+        updatedItem = new Item(
+                newItemDto.getId(),
+                null,
+                "New desc",
                 null,
                 null,
                 null
