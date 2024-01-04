@@ -2,6 +2,9 @@ package ru.practicum.shareit.booking;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
@@ -14,8 +17,10 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.service.MapperService;
 import ru.practicum.shareit.service.ValidationService;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.utils.Pagination;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,69 +100,123 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getBookings(Long userId, String state) {
+    public List<BookingDto> getBookings(Long userId, String state, Integer from, Integer size) {
         validateUser(userId);
 
-        List<Booking> bookings;
-        Sort sortByStart = Sort.by(Sort.Direction.DESC, "start");
+        List<BookingDto> listBookingDto = new ArrayList<>();
 
-        switch (state) {
-            case "ALL":
-                bookings = bookingRepository.findByBookerId(userId, sortByStart);
-                break;
-            case "CURRENT":
-                bookings = bookingRepository.findByBookerIdAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), sortByStart);
-                break;
-            case "PAST":
-                bookings = bookingRepository.findByBookerIdAndEndIsBefore(userId, LocalDateTime.now(), sortByStart);
-                break;
-            case "FUTURE":
-                bookings = bookingRepository.findByBookerIdAndStartIsAfter(userId, LocalDateTime.now(), sortByStart);
-                break;
-            case "WAITING":
-            case "REJECTED":
-                bookings = bookingRepository.findByBookerIdAndStatus(userId, BookingStatus.valueOf(state), sortByStart);
-                break;
-            default:
-                throw new ValidationError("Unknown state: " + state);
+        Pageable pageable;
+        Sort sort = Sort.by(Sort.Direction.DESC, "start");
+        Page<Booking> page;
+        Pagination pager = new Pagination(from, size);
+
+        if (size == null) {
+            pageable = PageRequest.of(pager.getPageStart(), pager.getPageSize(), sort);
+            page = getBookingsPage(state, userId, pageable);
+
+            while (page.hasContent()) {
+                listBookingDto.addAll(page.stream().map(mapperService::toBookingDto).collect(Collectors.toList()));
+                pageable = pageable.next();
+                page = getBookingsPage(state, userId, pageable);
+            }
+        } else {
+            for (int i = pager.getPageStart(); i < pager.getPagesAmount(); i++) {
+                pageable = PageRequest.of(i, pager.getPageSize(), sort);
+                page = getBookingsPage(state, userId, pageable);
+                listBookingDto.addAll(page.stream().map(mapperService::toBookingDto).collect(Collectors.toList()));
+            }
+
+            listBookingDto = listBookingDto.stream().limit(size).collect(Collectors.toList());
         }
 
-        return bookings.stream()
-                .map(mapperService::toBookingDto)
-                .collect(Collectors.toList());
+        return listBookingDto;
     }
 
     @Override
-    public List<BookingDto> getOwnerBookings(Long userId, String state) {
+    public List<BookingDto> getOwnerBookings(Long userId, String state, Integer from, Integer size) {
         validateUser(userId);
 
-        List<Booking> bookings;
-        Sort sortByStart = Sort.by(Sort.Direction.DESC, "start");
+        List<BookingDto> listBookingDto = new ArrayList<>();
+
+        Pageable pageable;
+        Sort sort = Sort.by(Sort.Direction.DESC, "start");
+        Page<Booking> page;
+        Pagination pager = new Pagination(from, size);
+
+        if (size == null) {
+            pageable = PageRequest.of(pager.getPageStart(), pager.getPageSize(), sort);
+            page = getOwnerBookingsPage(state, userId, pageable);
+
+            while (page.hasContent()) {
+                listBookingDto.addAll(page.stream().map(mapperService::toBookingDto).collect(Collectors.toList()));
+                pageable = pageable.next();
+                page = getOwnerBookingsPage(state, userId, pageable);
+            }
+        } else {
+            for (int i = pager.getPageStart(); i < pager.getPagesAmount(); i++) {
+                pageable = PageRequest.of(i, pager.getPageSize(), sort);
+                page = getOwnerBookingsPage(state, userId, pageable);
+                listBookingDto.addAll(page.stream().map(mapperService::toBookingDto).collect(Collectors.toList()));
+            }
+
+            listBookingDto = listBookingDto.stream().limit(size).collect(Collectors.toList());
+        }
+
+        return listBookingDto;
+    }
+
+    private Page<Booking> getBookingsPage(String state, Long userId, Pageable pageable) {
+        Page<Booking> page;
 
         switch (state) {
             case "ALL":
-                bookings = bookingRepository.findByItem_Owner_Id(userId, sortByStart);
+                page = bookingRepository.findByBookerId(userId, pageable);
                 break;
             case "CURRENT":
-                bookings = bookingRepository.findByItem_Owner_IdAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), sortByStart);
+                page = bookingRepository.findByBookerIdAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), pageable);
                 break;
             case "PAST":
-                bookings = bookingRepository.findByItem_Owner_IdAndEndIsBefore(userId, LocalDateTime.now(), sortByStart);
+                page = bookingRepository.findByBookerIdAndEndIsBefore(userId, LocalDateTime.now(), pageable);
                 break;
             case "FUTURE":
-                bookings = bookingRepository.findByItem_Owner_IdAndStartIsAfter(userId, LocalDateTime.now(), sortByStart);
+                page = bookingRepository.findByBookerIdAndStartIsAfter(userId, LocalDateTime.now(), pageable);
                 break;
             case "WAITING":
             case "REJECTED":
-                bookings = bookingRepository.findByItem_Owner_IdAndStatus(userId, BookingStatus.valueOf(state), sortByStart);
+                page = bookingRepository.findByBookerIdAndStatus(userId, BookingStatus.valueOf(state), pageable);
                 break;
             default:
                 throw new ValidationError("Unknown state: " + state);
         }
 
-        return bookings.stream()
-                .map(mapperService::toBookingDto)
-                .collect(Collectors.toList());
+        return page;
+    }
+
+    private Page<Booking> getOwnerBookingsPage(String state, Long userId, Pageable pageable) {
+        Page<Booking> page;
+
+        switch (state) {
+            case "ALL":
+                page = bookingRepository.findByItem_Owner_Id(userId, pageable);
+                break;
+            case "CURRENT":
+                page = bookingRepository.findByItem_Owner_IdAndStartIsBeforeAndEndIsAfter(userId, LocalDateTime.now(), LocalDateTime.now(), pageable);
+                break;
+            case "PAST":
+                page = bookingRepository.findByItem_Owner_IdAndEndIsBefore(userId, LocalDateTime.now(), pageable);
+                break;
+            case "FUTURE":
+                page = bookingRepository.findByItem_Owner_IdAndStartIsAfter(userId, LocalDateTime.now(), pageable);
+                break;
+            case "WAITING":
+            case "REJECTED":
+                page = bookingRepository.findByItem_Owner_IdAndStatus(userId, BookingStatus.valueOf(state), pageable);
+                break;
+            default:
+                throw new ValidationError("Unknown state: " + state);
+        }
+
+        return page;
     }
 
     private UserDto validateUser(Long userId) {

@@ -13,6 +13,9 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.request.dto.ItemRequestMapper;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -26,6 +29,7 @@ public class MapperService {
     private final ItemMapper itemMapper;
     private final BookingMapper bookingMapper;
     private final CommentMapper commentMapper;
+    private final ItemRequestMapper itemRequestMapper;
 
     public UserDto toUserDto(User user) {
         return userMapper.toUserDto(user);
@@ -65,5 +69,13 @@ public class MapperService {
 
     public CommentDto toCommentDto(Comment comment) {
         return commentMapper.toCommentDto(comment);
+    }
+
+    public ItemRequestDto toItemRequestDto(ItemRequest itemRequest, List<ItemDto> items) {
+        return itemRequestMapper.toItemRequestDto(itemRequest, toUserDto(itemRequest.getRequestor()), items);
+    }
+
+    public ItemRequest toItemRequest(ItemRequestDto itemRequestDto) {
+        return itemRequestMapper.toItemRequest(itemRequestDto, toUser(itemRequestDto.getRequestor()));
     }
 }
