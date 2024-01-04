@@ -155,6 +155,13 @@ public class ItemControllerTest {
     }
 
     @Test
+    void deleteItem() throws Exception {
+        mvc.perform(delete("/items/1")
+                .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void createComment() throws Exception {
         when(itemService.createComment(any(), any(Long.class), any(Long.class)))
                 .thenReturn(commentDto);

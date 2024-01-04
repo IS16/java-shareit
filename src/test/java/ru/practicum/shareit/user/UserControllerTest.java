@@ -92,4 +92,10 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.name", is(userDto.getName()), String.class))
                 .andExpect(jsonPath("$.email", is(userDto.getEmail()), String.class));
     }
+
+    @Test
+    void deleteUser() throws Exception {
+        mvc.perform(delete("/users/1"))
+                .andExpect(status().isOk());
+    }
 }
