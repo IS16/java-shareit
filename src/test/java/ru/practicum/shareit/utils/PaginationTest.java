@@ -1,10 +1,8 @@
 package ru.practicum.shareit.utils;
 
 import org.junit.jupiter.api.Test;
-import ru.practicum.shareit.error.baseExceptions.ValidationError;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PaginationTest {
 
