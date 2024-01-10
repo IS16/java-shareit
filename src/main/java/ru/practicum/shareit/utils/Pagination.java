@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public class Pagination {
-    private final Integer SIZE = 1000;
+    private final Integer customSize = 1000;
     private Integer pageSize;
     private Integer pageStart;
     private Integer pagesAmount;
@@ -15,7 +15,7 @@ public class Pagination {
         pagesAmount = 0;
         if (size == null) {
             if (offset == 0) {
-                pageSize = SIZE;
+                pageSize = customSize;
                 pageStart = 0;
             }
         } else {
