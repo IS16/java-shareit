@@ -2,6 +2,9 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.BookingRepository;
@@ -19,10 +22,10 @@ import ru.practicum.shareit.service.MapperService;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
+import ru.practicum.shareit.utils.Pagination;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -101,8 +104,8 @@ public class ItemServiceImpl implements ItemService {
             item.setAvailable(foundItem.getAvailable());
         }
 
-        if (item.getRequest() == null) {
-            item.setRequest(foundItem.getRequest());
+        if (item.getRequestId() == null) {
+            item.setRequestId(foundItem.getRequestId());
         }
 
         log.info("Обновлён предмет: " + item);
@@ -110,28 +113,79 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> getAllItems(Long userId) {
+    public List<ItemDto> getAllItems(Long userId, Integer from, Integer size) {
         validateUser(userId);
 
+        List<ItemDto> listItemDto = new ArrayList<>();
+        Pageable pageable;
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        Page<Item> page;
+        Pagination pager = new Pagination(from, size);
+
+        if (size == null) {
+            pageable = PageRequest.of(pager.getPageStart(), pager.getPageSize(), sort);
+            page = repository.findByOwnerId(userId, pageable);
+
+            while (page.hasContent()) {
+                listItemDto.addAll(page.stream().map(
+                        item -> mapperService.toItemDtoWithBooking(item, getLastBooking(item.getId()), getNextBooking(item.getId()), getCommentsByItemId(item.getId()))
+                ).collect(Collectors.toList()));
+                pageable = pageable.next();
+                page = repository.findByOwnerId(userId, pageable);
+            }
+        } else {
+            for (int i = pager.getPageStart(); i < pager.getPagesAmount(); i++) {
+                pageable = PageRequest.of(i, pager.getPageSize(), sort);
+                page = repository.findByOwnerId(userId, pageable);
+                listItemDto.addAll(page.stream().map(
+                        item -> mapperService.toItemDtoWithBooking(item, getLastBooking(item.getId()), getNextBooking(item.getId()), getCommentsByItemId(item.getId()))
+                ).collect(Collectors.toList()));
+            }
+
+            listItemDto = listItemDto.stream().limit(size).collect(Collectors.toList());
+        }
+
         log.info("Получен список всех предметов");
-        return repository.findByOwnerId(userId).stream()
-                .map(item ->
-                    mapperService.toItemDtoWithBooking(item, getLastBooking(item.getId()), getNextBooking(item.getId()), getCommentsByItemId(item.getId()))
-                    )
-                .sorted(Comparator.comparing(ItemDto::getId))
-                .collect(Collectors.toList());
+        return listItemDto;
     }
 
     @Override
-    public List<ItemDto> searchItems(String text) {
+    public List<ItemDto> searchItems(String text, Integer from, Integer size) {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
 
+        List<ItemDto> listItemDto = new ArrayList<>();
+        Pageable pageable;
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
+        Page<Item> page;
+        Pagination pager = new Pagination(from, size);
+
+        if (size == null) {
+            pageable = PageRequest.of(pager.getPageStart(), pager.getPageSize(), sort);
+            page = repository.search(text, pageable);
+
+            while (page.hasContent()) {
+                listItemDto.addAll(page.stream().map(
+                        item -> mapperService.toItemDtoWithBooking(item, getLastBooking(item.getId()), getNextBooking(item.getId()), getCommentsByItemId(item.getId()))
+                ).collect(Collectors.toList()));
+                pageable = pageable.next();
+                page = repository.search(text, pageable);
+            }
+        } else {
+            for (int i = pager.getPageStart(); i < pager.getPagesAmount(); i++) {
+                pageable = PageRequest.of(i, pager.getPageSize(), sort);
+                page = repository.search(text, pageable);
+                listItemDto.addAll(page.stream().map(
+                        item -> mapperService.toItemDtoWithBooking(item, getLastBooking(item.getId()), getNextBooking(item.getId()), getCommentsByItemId(item.getId()))
+                ).collect(Collectors.toList()));
+            }
+
+            listItemDto = listItemDto.stream().limit(size).collect(Collectors.toList());
+        }
+
         log.info(String.format("Поиск предметов по подстроке \"%s\"", text));
-        return repository.search(text).stream()
-                .map(item -> mapperService.toItemDto(item, getCommentsByItemId(item.getId())))
-                .collect(Collectors.toList());
+        return listItemDto;
     }
 
     @Override
@@ -183,6 +237,13 @@ public class ItemServiceImpl implements ItemService {
     public List<CommentDto> getCommentsByItemId(Long itemId) {
         return commentRepository.findAllByItem_id(itemId, Sort.by(Sort.Direction.DESC, "created")).stream()
                 .map(mapperService::toCommentDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ItemDto> getItemsByRequestId(Long requestId) {
+        return repository.findAllByRequestId(requestId, Sort.by(Sort.Direction.DESC, "id")).stream()
+                .map(item -> mapperService.toItemDto(item, getCommentsByItemId(item.getId())))
                 .collect(Collectors.toList());
     }
 
