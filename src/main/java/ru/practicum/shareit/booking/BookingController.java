@@ -7,6 +7,7 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingInputDto;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import java.util.List;
 
 @RestController
@@ -34,16 +35,16 @@ public class BookingController {
     @GetMapping
     public List<BookingDto> getBookings(@RequestHeader("X-Sharer-User-Id") Long userId,
                                         @RequestParam(defaultValue = "ALL") String state,
-                                        @RequestParam(defaultValue = "0") Integer from,
-                                        @RequestParam(required = false) Integer size) {
+                                        @RequestParam(defaultValue = "0") @Min(0) Integer from,
+                                        @RequestParam(required = false) @Min(1) Integer size) {
         return bookingService.getBookings(userId, state, from, size);
     }
 
     @GetMapping("/owner")
     public List<BookingDto> getOwnerBookings(@RequestHeader("X-Sharer-User-Id") Long userId,
                                              @RequestParam(defaultValue = "ALL") String state,
-                                             @RequestParam(defaultValue = "0") Integer from,
-                                             @RequestParam(required = false) Integer size) {
+                                             @RequestParam(defaultValue = "0") @Min(0) Integer from,
+                                             @RequestParam(required = false) @Min(1) Integer size) {
         return bookingService.getOwnerBookings(userId, state, from, size);
     }
 }

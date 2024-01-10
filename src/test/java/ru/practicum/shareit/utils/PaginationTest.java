@@ -7,19 +7,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PaginationTest {
-    @Test
-    public void shouldThrowExceptionWhenSizeNotPositive() {
-        Integer from = 0;
-        Integer size = -1;
-        assertThrows(ValidationError.class, () -> new Pagination(from, size));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenFromNotPositive() {
-        Integer from = -1;
-        Integer size = 1;
-        assertThrows(ValidationError.class, () -> new Pagination(from, size));
-    }
 
     @Test
     public void shouldWorkCorrectWhenSizeLessThanFrom() {
@@ -72,7 +59,7 @@ public class PaginationTest {
 
         Pagination pager = new Pagination(from, size);
         assertThat(pager.getPageStart()).isEqualTo(0);
-        assertThat(pager.getPageSize()).isEqualTo(100);
+        assertThat(pager.getPageSize()).isEqualTo(1000);
         assertThat(pager.getPagesAmount()).isEqualTo(0);
     }
 }
