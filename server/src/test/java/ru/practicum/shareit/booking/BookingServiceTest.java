@@ -14,7 +14,6 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.service.MapperService;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,23 +31,23 @@ public class BookingServiceTest {
     private final UserService userService;
     private final ItemService itemService;
 
-    private UserDto userDto1_global = new UserDto(
+    private UserDto userDtoGlobal1 = new UserDto(
             1L,
             "Admin",
             "admin@shareit.ru"
     );
 
-    private UserDto userDto2_global = new UserDto(
+    private UserDto userDtoGlobal2 = new UserDto(
             2L, "Test", "test@shareit.ru"
     );
 
     private ItemDto item1 = new ItemDto(
-            11L, "Вещь1", "Описание", true, userDto1_global, null, null, null, null
+            11L, "Вещь1", "Описание", true, userDtoGlobal1, null, null, null, null
     );
 
     @Test
     void shouldThrowExceptionWhenCreateNotAvailableItem() {
-        UserDto newUserDto = userService.createUser(userDto1_global);
+        UserDto newUserDto = userService.createUser(userDtoGlobal1);
         UserDto newUserDto1 = userService.createUser(new UserDto(20L, "support", "support@shareit.ru"));
         ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
 
@@ -71,7 +70,7 @@ public class BookingServiceTest {
 
     @Test
     void shouldThrowExceptionWhenCreateFinishDateBeforeStartDate() {
-        UserDto newUserDto = userService.createUser(userDto1_global);
+        UserDto newUserDto = userService.createUser(userDtoGlobal1);
         UserDto newUserDto1 = userService.createUser(new UserDto(20L, "support", "support@shareit.ru"));
         ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
 
@@ -91,7 +90,7 @@ public class BookingServiceTest {
 
     @Test
     void shouldThrowExceptionWhenCreateBookingByItemOwner() {
-        UserDto newUserDto = userService.createUser(userDto1_global);
+        UserDto newUserDto = userService.createUser(userDtoGlobal1);
         ItemDto newItemDto = itemService.createItem(newUserDto.getId(), item1);
 
         BookingInputDto bookingInputDto1 = new BookingInputDto(
@@ -109,8 +108,8 @@ public class BookingServiceTest {
 
     @Test
     void shouldThrowExceptionWhenGetBookingByNotOwnerNotBooker() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
         UserDto userDto3 = userService.createUser(new UserDto(1000L, "support", "support@shareit.ru"));
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
@@ -132,8 +131,8 @@ public class BookingServiceTest {
 
     @Test
     void shouldReturnBookingsWhenGetBookingsByBookerSizeIsNull() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
@@ -159,8 +158,8 @@ public class BookingServiceTest {
 
     @Test
     void shouldReturnBookingsWhenGetBookingsByBookerSizeIsNotNull() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
@@ -186,8 +185,8 @@ public class BookingServiceTest {
 
     @Test
     public void shouldReturnBookingsWhenGetBookingsByBookerSizeIsNullDifferentStates() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
@@ -222,8 +221,8 @@ public class BookingServiceTest {
 
     @Test
     void shouldReturnBookingsWhenGetBookingsByOwnerSizeIsNull() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
@@ -249,8 +248,8 @@ public class BookingServiceTest {
 
     @Test
     void shouldReturnBookingsWhenGetBookingsByOwnerSizeIsNotNull() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
@@ -276,8 +275,8 @@ public class BookingServiceTest {
 
     @Test
     public void shouldReturnBookingsWhenGetBookingsByOwnerSizeIsNullDifferentStates() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
@@ -312,7 +311,7 @@ public class BookingServiceTest {
 
     @Test
     void shouldThrowExceptionsWithUnknownState() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
 
         ValidationError exception = assertThrows(
                 ValidationError.class,
@@ -331,8 +330,8 @@ public class BookingServiceTest {
 
     @Test
     void shouldDeclineBookingRequestByOwner() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
@@ -349,8 +348,8 @@ public class BookingServiceTest {
 
     @Test
     void shouldCancelBookingRequestByBooker() {
-        UserDto userDto1 = userService.createUser(userDto1_global);
-        UserDto userDto2 = userService.createUser(userDto2_global);
+        UserDto userDto1 = userService.createUser(userDtoGlobal1);
+        UserDto userDto2 = userService.createUser(userDtoGlobal2);
 
         ItemDto itemDto = itemService.createItem(userDto1.getId(), item1);
 
