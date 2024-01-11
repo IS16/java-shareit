@@ -9,7 +9,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingInputDto;
 import ru.practicum.shareit.booking.dto.BookingState;
-import ru.practicum.shareit.booking.dto.BookingStatus;
 import ru.practicum.shareit.error.baseExceptions.ValidationError;
 
 import javax.validation.Valid;
