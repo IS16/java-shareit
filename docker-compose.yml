@@ -9,7 +9,10 @@ services:
     depends_on:
       - server
     env_file:
-      - .env
+      - path: ./.env
+        required: false
+    environment:
+      - SHAREIT_SERVER_URL=http://server:9090
 
   server:
     build: server/
@@ -20,7 +23,12 @@ services:
     depends_on:
       - db
     env_file:
-      - .env
+      - path: ./.env
+        required: false
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
+      - SPRING_DATASOURCE_USER=root
+      - SPRING_DATASOURCE_PASSWORD=root
 
   db:
     image: postgres:13.7-alpine
@@ -28,4 +36,9 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - .env
+      - path: ./.env
+        required: false
+    environment:
+      - POSTGRES_DB=shareit
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
