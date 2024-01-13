@@ -1,4 +1,4 @@
-version: '3.8'
+version: ''
 services:
   gateway:
     build: gateway/
@@ -9,7 +9,7 @@ services:
     depends_on:
       - server
     env_file:
-      - path: ./.env
+      - path: .env
         required: false
     environment:
       - SHAREIT_SERVER_URL=http://server:9090
@@ -23,7 +23,7 @@ services:
     depends_on:
       - db
     env_file:
-      - path: ./.env
+      - path: .env
         required: false
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
@@ -36,7 +36,7 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - path: ./.env
+      - path: .env
         required: false
     environment:
       - POSTGRES_DB=shareit
